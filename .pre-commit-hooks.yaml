@@ -1,0 +1,5 @@
+- id: xml-format
+  name: Format XML files
+  entry: xml-format --write
+  language: python
+  types: [xml]
