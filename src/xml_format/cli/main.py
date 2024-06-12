@@ -76,12 +76,37 @@ def xml_format(transform_file, show_default_transform, write, filenames):
         xml_doc = etree.parse(xml_file)  # noqa: S320
         result = transform(xml_doc)
 
+        pretty_result = etree.tostring(result, pretty_print=True)
+        pretty_xml = pretty_result.decode(encoding="utf-8")
+
+        frontmatter = extract_frontmatter(xml_file)
+        if frontmatter:
+            pretty_xml = frontmatter + pretty_xml
+
         # Write the transformed content back to the source file if --write is specified
         if write:
-            with open(xml_file, "wb") as file:
-                file.write(etree.tostring(result, pretty_print=True))
+            with open(xml_file, "w", encoding="utf-8") as file:
+                file.write(pretty_xml)
             click.echo(f"Formatted content of {xml_file}")
         else:
             # Print the transformed XML
-            click.echo(f"Formatted content of {xml_file}:\n{result!s}")
+            click.echo(f"Formatted content of {xml_file}:\n\n{pretty_xml}")
     return
+
+
+def extract_frontmatter(xml_file):
+    """Get the original XML declaration and doctype"""
+    frontmatter = ""
+    with open(xml_file, encoding="utf-8") as file:
+        xml_content = file.read()
+
+        if xml_content.lstrip().startswith("<?xml"):
+            xml_declaration_end = xml_content.find("?>") + 2
+            frontmatter = xml_content[:xml_declaration_end] + "\n"
+            xml_content = xml_content[xml_declaration_end:].lstrip()
+
+        if xml_content.lstrip().startswith("<!DOCTYPE"):
+            doctype_end = xml_content.find(">") + 1
+            frontmatter += xml_content[:doctype_end] + "\n"
+
+    return frontmatter
