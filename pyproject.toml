@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "A command-line tool to format XML files."
 readme = "README.md"
 requires-python = ">=3.8"
-license = { file = "LICENSE" }
+license = { file = "LICENSE.txt" }
 keywords = []
 authors = [
   { name = "Isaac Dadzie", email = "4581114+idadzie@users.noreply.github.com" },
