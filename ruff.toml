@@ -1,0 +1,34 @@
+[lint]
+extend-select = [
+  "B",
+  "C90",
+  "E501", # line too long (default 88)
+  "I",    # isort
+  "UP",   # pyupgrade
+]
+exclude = ["setup/*"]
+
+[lint.per-file-ignores]
+"__init__.py" = [
+  "E501",
+  "F401",
+  "I001",
+] # ignore line too long, unused and unsorted imports in __init__.py
+"__about__.py" = ["E501"] # ignore line too long in __about__.py
+"__main__.py" = ["E501"] # ignore line too long in __main__.py
+
+[lint.isort]
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "first-party",
+  "local-folder",
+]
+
+[lint.mccabe]
+max-complexity = 16
+
+
+[format]
+exclude = ["setup/*"]
