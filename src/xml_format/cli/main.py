@@ -63,30 +63,15 @@ def xml_format(transform_file, show_default_transform, write, filenames):
         return
 
     # Load the XSLT content
-    if transform_file:
-        with open(transform_file) as xslt_file:
-            xslt_content = xslt_file.read()
-    else:
-        xslt_content = default_xslt_content
-
-    xslt_doc = etree.fromstring(xslt_content)  # noqa: S320
-    transform = etree.XSLT(xslt_doc)
+    xslt_content = readfile(transform_file) if transform_file else default_xslt_content
 
     for xml_file in filenames:
-        xml_doc = etree.parse(xml_file)  # noqa: S320
-        result = transform(xml_doc)
-
-        pretty_result = etree.tostring(result, pretty_print=True)
-        pretty_xml = pretty_result.decode(encoding="utf-8")
-
-        frontmatter = extract_frontmatter(xml_file)
-        if frontmatter:
-            pretty_xml = frontmatter + pretty_xml
+        xml_content = readfile(xml_file)
+        pretty_xml = format_xml_content(xml_content, xslt_content)
 
         # Write the transformed content back to the source file if --write is specified
         if write:
-            with open(xml_file, "w", encoding="utf-8") as file:
-                file.write(pretty_xml)
+            writefile(xml_file, pretty_xml)
             click.echo(f"Formatted content of {xml_file}")
         else:
             # Print the transformed XML
@@ -94,19 +79,49 @@ def xml_format(transform_file, show_default_transform, write, filenames):
     return
 
 
-def extract_frontmatter(xml_file):
+def readfile(file_path):
+    with open(file_path, encoding="utf-8") as f:
+        return f.read()
+
+
+def writefile(file_path, content):
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+def extract_frontmatter(xml_content):
     """Get the original XML declaration and doctype"""
     frontmatter = ""
-    with open(xml_file, encoding="utf-8") as file:
-        xml_content = file.read()
+    if xml_content.lstrip().startswith("<?xml"):
+        xml_declaration_end = xml_content.find("?>") + 2
+        frontmatter = xml_content[:xml_declaration_end].strip() + "\n"
+        xml_content = xml_content[xml_declaration_end:]
 
-        if xml_content.lstrip().startswith("<?xml"):
-            xml_declaration_end = xml_content.find("?>") + 2
-            frontmatter = xml_content[:xml_declaration_end] + "\n"
-            xml_content = xml_content[xml_declaration_end:].lstrip()
+    if xml_content.lstrip().startswith("<!DOCTYPE"):
+        doctype_end = xml_content.find(">") + 1
+        frontmatter += xml_content[:doctype_end].strip() + "\n"
+        xml_content = xml_content[doctype_end:].strip()
 
-        if xml_content.lstrip().startswith("<!DOCTYPE"):
-            doctype_end = xml_content.find(">") + 1
-            frontmatter += xml_content[:doctype_end] + "\n"
+    return frontmatter, xml_content
 
-    return frontmatter
+
+def format_xml_content(xml_content, xslt_content):
+    """Format the XML content using XLST transform"""
+
+    frontmatter, xml_content = extract_frontmatter(xml_content)
+
+    parser = etree.XMLParser()
+    xml_doc = etree.XML(xml_content, parser)
+
+    xslt_doc = etree.fromstring(xslt_content)  # noqa: S320
+    transform = etree.XSLT(xslt_doc)
+
+    result = transform(xml_doc)
+
+    pretty_result = etree.tostring(result, pretty_print=True)
+    pretty_xml = pretty_result.decode(encoding="utf-8")
+
+    if frontmatter:
+        pretty_xml = frontmatter + pretty_xml
+
+    return pretty_xml
