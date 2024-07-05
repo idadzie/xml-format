@@ -12,7 +12,7 @@ By default, it formats only the attributes of the XML tags, preferring the "id" 
 ## Installation
 
 ```console
-pip install xml-format
+pip install git+https://github.com/idadzie/xml-format.git
 ```
 
 ## License
